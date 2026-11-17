@@ -1,0 +1,46 @@
+name: Build
+on: { push: { branches: [main, master] }, workflow_dispatch: {} }
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip project
+        run: unzip -q focumon-app.zip -d app
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.9' }
+      - name: Build APK
+        working-directory: app
+        run: gradle :android:assembleDebug --no-daemon
+        env: { SKIP_DESKTOP: '1' }
+      - uses: actions/upload-artifact@v4
+        with: { name: Focumon-apk, path: app/android/build/outputs/apk/debug/*.apk }
+  exe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip project
+        shell: pwsh
+        run: Expand-Archive focumon-app.zip app
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.9' }
+      - name: Build desktop
+        working-directory: app
+        run: gradle :desktop:installDist --no-daemon
+        env: { SKIP_ANDROID: '1' }
+      - name: Portable app (zip)
+        shell: pwsh
+        run: |
+          jpackage --type app-image --name Focumon --input app/desktop/build/install/desktop/lib --main-jar desktop.jar --main-class fm.Launcher --dest out
+          Compress-Archive out/Focumon Focumon-portable.zip
+      - name: Installer (exe)
+        continue-on-error: true
+        shell: pwsh
+        run: jpackage --type exe --name Focumon --input app/desktop/build/install/desktop/lib --main-jar desktop.jar --main-class fm.Launcher --dest out --win-shortcut --win-menu --win-dir-chooser
+      - uses: actions/upload-artifact@v4
+        with: { name: Focumon-windows, path: "Focumon-portable.zip\nout/*.exe" }
