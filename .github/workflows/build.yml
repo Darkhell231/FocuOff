@@ -37,11 +37,13 @@ jobs:
       - name: Portable app (zip)
         shell: pwsh
         run: |
-          jpackage --type app-image --name Focumon --input app/desktop/build/install/desktop/lib --main-jar desktop.jar --main-class fm.Launcher --dest out --add-modules java.base,java.desktop,java.logging,java.xml,java.prefs,java.datatransfer,java.sql,java.naming,jdk.unsupported,jdk.jsobject,jdk.xml.dom --jlink-options "--strip-debug --no-header-files --no-man-pages --compress=zip-9"
+          jpackage --type app-image --name Focumon --input app/desktop/build/install/desktop/lib --main-jar desktop.jar --main-class fm.Launcher --dest out --add-modules java.base,java.logging,jdk.httpserver --jlink-options "--strip-debug --no-header-files --no-man-pages --compress=zip-9"
           Compress-Archive out/Focumon Focumon-portable.zip
       - name: Installer (exe)
         continue-on-error: true
         shell: pwsh
-        run: jpackage --type exe --name Focumon --input app/desktop/build/install/desktop/lib --main-jar desktop.jar --main-class fm.Launcher --dest out --add-modules java.base,java.desktop,java.logging,java.xml,java.prefs,java.datatransfer,java.sql,java.naming,jdk.unsupported,jdk.jsobject,jdk.xml.dom --jlink-options "--strip-debug --no-header-files --no-man-pages --compress=zip-9" --win-shortcut --win-menu --win-dir-chooser
+        run: jpackage --type exe --name Focumon --input app/desktop/build/install/desktop/lib --main-jar desktop.jar --main-class fm.Launcher --dest out --add-modules java.base,java.logging,jdk.httpserver --jlink-options "--strip-debug --no-header-files --no-man-pages --compress=zip-9" --win-shortcut --win-menu --win-dir-chooser
       - uses: actions/upload-artifact@v4
-        with: { name: Focumon-windows, path: "Focumon-portable.zip\nout/*.exe" }
+        with: { name: Focumon-installer, path: "out/*.exe", if-no-files-found: ignore }
+      - uses: actions/upload-artifact@v4
+        with: { name: Focumon-portable, path: Focumon-portable.zip }
